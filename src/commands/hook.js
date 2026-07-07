@@ -6,7 +6,6 @@
  * tracker hook   → installs shell hook for auto capture
  * tracker unhook → removes shell hook
  */
-
 const {
   installHook,
   removeHook,
@@ -15,6 +14,7 @@ const {
 } = require('../utils/hook');
 
 const { isInitialized, showInitError } = require('../utils/validator');
+const colors = require('../utils/colors');
 
 /*
  * hookCommand() — runs when user types: tracker hook
@@ -30,21 +30,20 @@ function hookCommand() {
     return;
   }
 
-  console.log('\n🪄 Setting up automatic command capture...\n');
-
+  console.log(colors.heading('\n🪄 Setting up automatic command capture...\n'));
   /*
    * Show which shell was detected
    */
   const shell = detectShell();
-  console.log(`🔍 Detected shell: ${shell}`);
+  console.log(colors.info(`🔍 Detected shell: ${shell}`));
 
   /*
    * Check if already installed
    */
   if (isHookInstalled()) {
-    console.log('\n⚠️  Shell hook is already installed!');
-    console.log('💡 Your commands are already being captured automatically');
-    console.log('💡 Run: tracker unhook to disable\n');
+    console.log(colors.warning('\n⚠️  Shell hook is already installed!'));
+    console.log(colors.info('💡 Your commands are already being captured automatically'));
+    console.log(colors.info('💡 Run: tracker unhook to disable\n'));
     return;
   }
 
@@ -52,24 +51,23 @@ function hookCommand() {
    * Install the hook
    */
   const result = installHook();
-  console.log('\n' + result.message);
 
   if (result.success) {
-    console.log('\n🎯 Almost done! Run this command to activate:');
-    /*
-     * Always show Unix style path for source command
-     * Even on Windows — Git Bash uses Unix paths
-     * ~/.bashrc works on all systems
-     */
+    console.log(colors.success('\n' + result.message));
+    console.log(colors.info('\n🎯 Almost done! Run this command to activate:'));
     const sourceCmd = {
       zsh: '~/.zshrc',
       bash: '~/.bashrc',
       fish: '~/.config/fish/config.fish',
     }[result.shell];
-    console.log(`\n   source ${sourceCmd}\n`);
-    console.log('After that — every command you type will be saved automatically! 🚀\n');
+
+    console.log(colors.bold(`\n   source ${sourceCmd}\n`));
+    console.log(colors.success('After that — every command you type will be saved automatically! 🚀\n'));
+  } else {
+    console.log(colors.error('\n' + result.message));
   }
 }
+
 
 /*
  * unhookCommand() — runs when user types: tracker unhook
@@ -77,21 +75,26 @@ function hookCommand() {
  */
 function unhookCommand() {
 
-  console.log('\n🔌 Removing automatic command capture...\n');
+  console.log(colors.info('\n🔌 Removing automatic command capture...\n'));
 
   const result = removeHook();
-  console.log(result.message);
 
   if (result.success) {
-    console.log('\n🎯 Almost done! Run this to apply changes:');
+    console.log(colors.success(result.message));
+    console.log(colors.info('\n🎯 Almost done! Run this to apply changes:'));
+
     const shell = result.shell || detectShell();
+
     const sourceCmd = {
       zsh: '~/.zshrc',
       bash: '~/.bashrc',
       fish: '~/.config/fish/config.fish',
     }[shell];
-    console.log(`\n   source ${sourceCmd}\n`);
-    console.log('After that — automatic capture will be disabled\n');
+
+    console.log(colors.bold(`\n   source ${sourceCmd}\n`));
+    console.log(colors.success('After that — automatic capture will be disabled\n'));
+  } else {
+    console.log(colors.error(result.message));
   }
 }
 

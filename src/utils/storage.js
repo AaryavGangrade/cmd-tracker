@@ -13,6 +13,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const colors = require('./colors');
 
 /*
  * Import our categorize function from categorizer.js
@@ -87,14 +88,13 @@ function initStorage() {
   if (!fs.existsSync(TRACKER_DIR)) {
 
     /*
-     * fs.mkdirSync() → creates a folder
-     * { recursive: true } → creates parent folders too if needed
-     * Like "mkdir -p" in linux
-     */
+   * fs.mkdirSync() → creates a folder
+   * { recursive: true } → creates parent folders too if needed
+   * Like "mkdir -p" in linux
+   */
     fs.mkdirSync(TRACKER_DIR, { recursive: true });
-    console.log('✅ Created .tracker folder');
+    console.log(colors.success('✅ Created .tracker folder'));
   }
-
   /*
    * If commands.json doesn't exist → create it with default structure
    */
@@ -109,7 +109,7 @@ function initStorage() {
       COMMANDS_FILE,
       JSON.stringify(getDefaultStructure(), null, 2)
     );
-    console.log('✅ Created .tracker/commands.json');
+    console.log(colors.success('✅ Created .tracker/commands.json'));
   }
 }
 
