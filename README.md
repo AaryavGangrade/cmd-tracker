@@ -164,7 +164,7 @@ your-project/
 > ✅ `.tracker/` is automatically added to `.gitignore`
 > Your command history stays local — never pushed to GitHub
 ## 🔒 Automatic Secret Redaction
-![alt text](image.png)
+![alt text](project-flow.png)
 
 Security is a core priority of **cmd-tracker**. Before any command is written to `.tracker/commands.json`, it is automatically scanned for sensitive information.
 
@@ -172,13 +172,13 @@ If a command contains credentials such as API keys, access tokens, passwords, or
 
 ### Example
 
-#### Before
+#### AWS example — Before
 
 ```bash
 export AWS_SECRET_ACCESS_KEY=mySecretKey
 ```
 
-#### Saved as
+#### AWS example — Saved as
 
 ```bash
 export AWS_SECRET_ACCESS_KEY=[REDACTED]
@@ -186,13 +186,13 @@ export AWS_SECRET_ACCESS_KEY=[REDACTED]
 
 Another example:
 
-#### Before
+#### curl example — Before
 
 ```bash
 curl -u admin:myPassword123 https://api.example.com
 ```
 
-#### Saved as
+#### curl example — Saved as
 
 ```bash
 curl -u [REDACTED] https://api.example.com
