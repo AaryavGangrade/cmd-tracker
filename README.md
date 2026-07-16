@@ -164,6 +164,7 @@ your-project/
 > ✅ `.tracker/` is automatically added to `.gitignore`
 > Your command history stays local — never pushed to GitHub
 
+> 🔒 **Secrets are automatically redacted.** If a command contains an API key, token, password, or other credential, cmd-tracker masks the sensitive value (e.g. `export API_KEY=[REDACTED]`) before saving — so secrets never end up sitting in `commands.json`, even locally.
 ---
 
 ## 🖥️ Platform Support
