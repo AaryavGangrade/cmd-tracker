@@ -163,9 +163,91 @@ your-project/
 
 > ✅ `.tracker/` is automatically added to `.gitignore`
 > Your command history stays local — never pushed to GitHub
+## 🔒 Automatic Secret Redaction
+![alt text](image.png)
 
-> 🔒 **Secrets are automatically redacted.** If a command contains an API key, token, password, or other credential, cmd-tracker masks the sensitive value (e.g. `export API_KEY=[REDACTED]`) before saving — so secrets never end up sitting in `commands.json`, even locally.
+Security is a core priority of **cmd-tracker**. Before any command is written to `.tracker/commands.json`, it is automatically scanned for sensitive information.
+
+If a command contains credentials such as API keys, access tokens, passwords, or private keys, **only the sensitive value is replaced with `[REDACTED]`**, while the rest of the command is preserved. This keeps your command history useful without exposing secrets.
+
+### Example
+
+#### Before
+
+```bash
+export AWS_SECRET_ACCESS_KEY=mySecretKey
+```
+
+#### Saved as
+
+```bash
+export AWS_SECRET_ACCESS_KEY=[REDACTED]
+```
+
+Another example:
+
+#### Before
+
+```bash
+curl -u admin:myPassword123 https://api.example.com
+```
+
+#### Saved as
+
+```bash
+curl -u [REDACTED] https://api.example.com
+```
+
 ---
+
+### 🛡️ Supported Secret Types
+
+The sanitizer automatically detects and redacts:
+
+- AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, etc.)
+- API keys
+- Access tokens
+- Authentication tokens
+- Passwords
+- Bearer tokens
+- HTTP Basic Authentication credentials
+- `curl -u` / `curl --user` credentials
+- GitHub Personal Access Tokens
+- GitLab Personal Access Tokens
+- Slack tokens
+- SSH private keys
+- PEM private keys
+
+---
+
+### ⚠️ Commands That Are Not Saved
+
+If a command consists **entirely of sensitive information** (for example, only a GitHub token or a private key), **cmd-tracker will not save it**.
+
+Example:
+
+**Input**
+
+```text
+ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**Result**
+
+```text
+Command not saved (contains only sensitive data)
+```
+
+---
+
+### ✅ Why This Matters
+
+This feature helps prevent accidental exposure of secrets while keeping your command history clean and useful.
+
+- 🔒 Prevents credentials from being stored in `.tracker/commands.json`
+- 📖 Preserves the readable parts of commands for future reference
+- 🚫 Avoids saving commands that contain nothing except sensitive information
+- 💻 Works automatically—no configuration required
 
 ## 🖥️ Platform Support
 
