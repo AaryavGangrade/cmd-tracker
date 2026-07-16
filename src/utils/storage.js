@@ -20,6 +20,7 @@ const colors = require('./colors');
  * We need it here to know WHICH category to save the command in
  */
 const { categorize } = require('./categorizer');
+const { sanitizeCommand } = require('./sanitizer');
 
 /*
  * process.cwd() → Current Working Directory
@@ -158,9 +159,18 @@ function saveCommand(command) {
   const cleanCommand = command.trim();
 
   /*
+   * Sanitize the command by redacting secret values, or skipping saving if blocked
+   */
+  const sanitizedCommand = sanitizeCommand(cleanCommand);
+
+  if (sanitizedCommand === null) {
+    return { saved: false, reason: 'sensitive command' };
+  }
+
+  /*
    * Use our categorizer to find which category this command belongs to
    */
-  const category = categorize(cleanCommand);
+  const category = categorize(sanitizedCommand);
 
   /*
    * Read existing commands from file
@@ -179,7 +189,7 @@ function saveCommand(command) {
    * { command: "git status", time: "2026-05-06T..." }
    */
   const isDuplicate = data[category].some(
-    (item) => item.command === cleanCommand
+    (item) => item.command === sanitizedCommand
   );
 
   if (isDuplicate) {
@@ -192,7 +202,7 @@ function saveCommand(command) {
    * This gives us a full date+time in standard format
    */
   const commandObject = {
-    command: cleanCommand,
+    command: sanitizedCommand,
     time: new Date().toISOString(),
   };
 
@@ -206,7 +216,7 @@ function saveCommand(command) {
    */
   fs.writeFileSync(COMMANDS_FILE, JSON.stringify(data, null, 2));
 
-  return { saved: true, category };
+  return { saved: true, category, command: sanitizedCommand };
 }
 
 /*

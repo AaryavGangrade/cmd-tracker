@@ -50,7 +50,7 @@ function saveCommandAction(command) {
     if (result.saved) {
       const categoryColor = colors.getCategoryColor(result.category);
       console.log(
-        `${colors.success('✅ Saved')} [${categoryColor(result.category)}]: ${command}`
+        `${colors.success('✅ Saved')} [${categoryColor(result.category)}]: ${result.command}`
       );
     }
 
