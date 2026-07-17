@@ -168,7 +168,7 @@ your-project/
 
 Security is a core priority of **cmd-tracker**. Before any command is written to `.tracker/commands.json`, it is automatically scanned for sensitive information.
 
-If a command contains credentials such as API keys, access tokens, passwords, or private keys, **only the sensitive value is replaced with `[REDACTED]`**, while the rest of the command is preserved. This keeps your command history useful without exposing secrets.
+If a command contains credentials such as API keys, access tokens passwords, or private keys, **the sensitive value or credential segment is replaced with `[REDACTED]`**, while the rest of the command is preserved. This keeps your command history useful without exposing secrets.
 
 ### Example
 
@@ -189,7 +189,7 @@ Another example:
 #### curl example — Before
 
 ```bash
-curl -u admin:myPassword123 https://api.example.com
+curl -u sampleuser:examplePass https://api.example.com
 ```
 
 #### curl example — Saved as
