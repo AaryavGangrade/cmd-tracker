@@ -1,6 +1,22 @@
 /**
+ * Redacts credentials embedded in URL userinfo (e.g. https://user:pass@host),
+ * which the prefix-based rules below don't cover since there's no
+ * recognizable "key=" style prefix — just a scheme and an @ symbol.
+ * Keeps the scheme and host visible, drops the credential pair entirely.
+ */
+function redactUrlCredentials(str) {
+  return str.replace(
+    /\b(https?:\/\/)([^\s/:@]+):([^\s/@]+)@/gi,
+    '$1[REDACTED]@'
+  );
+}
+
+/**
  * Extracts a value starting at a given index in a string, handling both
  * quoted ("...", '...') and unquoted (space/operator-delimited) forms.
+ * Backslash-escaped characters (\" \  etc.) are skipped over rather than
+ * treated as terminators, so escaped quotes/spaces inside a value don't
+ * prematurely end the match.
  * Uses plain string scanning instead of regex to avoid backtracking risk
  * and keep cyclomatic complexity low.
  */
@@ -10,14 +26,29 @@ function extractValueRange(str, startIndex) {
 
   const quoteChar = str[i];
   if (quoteChar === '"' || quoteChar === '\'') {
-    const closeIndex = str.indexOf(quoteChar, i + 1);
-    const end = closeIndex === -1 ? str.length : closeIndex + 1;
+    let j = i + 1;
+    while (j < str.length) {
+      if (str[j] === '\\' && j + 1 < str.length) {
+        j += 2;
+        continue;
+      }
+      if (str[j] === quoteChar) break;
+      j++;
+    }
+    const end = j < str.length ? j + 1 : str.length;
     return { start: i, end };
   }
 
   const stopChars = new Set([' ', '\t', ';', '&', '|', '>', '<']);
   let end = i;
-  while (end < str.length && !stopChars.has(str[end])) end++;
+  while (end < str.length) {
+    if (str[end] === '\\' && end + 1 < str.length) {
+      end += 2;
+      continue;
+    }
+    if (stopChars.has(str[end])) break;
+    end++;
+  }
   return { start: i, end };
 }
 
@@ -73,7 +104,9 @@ function sanitizeCommand(commandString) {
     return commandString;
   }
 
-  let sanitized = commandString;
+  // URL-embedded credentials (curl https://user:pass@host) — handled first
+  // since they don't fit the "prefix + value" shape the rules below expect.
+  let sanitized = redactUrlCredentials(commandString);
 
   // Each entry: a simple PREFIX-only regex, plus optional matching rules.
   const prefixRules = [
@@ -81,7 +114,11 @@ function sanitizeCommand(commandString) {
     { regex: /\b[A-Z0-9_]*(?:API_?KEY|ACCESS_?TOKEN|AUTH_?TOKEN|TOKEN)\s*=\s*/gi },
     { regex: /\b[a-z0-9_-]*(?:pass(?:word)?|passwd|pwd)\s*[:=]\s*/gi },
     { regex: /\b[a-z0-9_-]*(?:secret|private_key|client_secret)\s*[:=]\s*/gi },
-    { regex: /\bbearer\s+/gi, requireTokenLike: true },
+    // No requireTokenLike here — "bearer" followed by anything is already
+    // strong enough evidence of a token; a length/shape heuristic on top
+    // of it only creates false negatives (e.g. "Bearer secret" slipping
+    // through unredacted).
+    { regex: /\bbearer\s+/gi },
     { regex: /\bauthorization:\s*basic\s+/gi },
     { regex: /(?:^|\s)(?:-u|--user)\s+/gi },
   ];
@@ -104,7 +141,15 @@ function sanitizeCommand(commandString) {
     sanitized = sanitized.replace(regex, '[REDACTED]');
   }
 
-  const strippedOfRedactions = sanitized.replace(/\[REDACTED\]/g, '').trim();
+  // If redaction has left nothing meaningful behind — the command WAS the
+  // secret — don't save it. This strips not just the "[REDACTED]" marker
+  // but the trailing key/prefix immediately before it too (e.g. "TOKEN="),
+  // since a bare "TOKEN=" left after redaction isn't real command content,
+  // just the skeleton of a secret assignment.
+  const strippedOfRedactions = sanitized
+    .replace(/\S*=?\[REDACTED\]/g, '')
+    .trim();
+
   if (strippedOfRedactions.length === 0) {
     return null;
   }
